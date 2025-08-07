@@ -198,10 +198,20 @@ def generate_report_pdf(reports):
         buf.seek(0)
         img = Image.open(buf)
 
+        import time
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_img:
             img.save(tmp_img.name)
+            img.close()  # Ensure file is closed before deleting
             pdf.image(tmp_img.name, w=180)
-            os.unlink(tmp_img.name)
+            plt.close(fig)
+            buf.close()
+            # Retry deletion if file is in use
+            for _ in range(5):
+                try:
+                    os.unlink(tmp_img.name)
+                    break
+                except PermissionError:
+                    time.sleep(0.2)
 
         plt.close(fig)
 
